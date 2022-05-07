@@ -1,3 +1,6 @@
+![image](https://github.com/YistYU/scMinerva/blob/main/overview.png)
+
+
 # scMinerva
 
 An unsupervised Single-Cell Multi-omics INtegration method with GCN on hEterogeneous graph utilizing RandomWAlk
