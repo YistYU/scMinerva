@@ -1,41 +1,32 @@
 import torch 
 import torch.nn as nn
 
-def xavier_init(m):
-    if type(m) == nn.Linear:
-        nn.init.xavier_normal_(m.weight)
-        if m.bias is not None:
-           m.bias.data.fill_(0.0)
+import numpy as np
+from torch import Tensor
+from torch_geometric.nn import GCNConv
+from torch_geometric.datasets import Planetoid
 
 
-class CNN(torch.nn.Module):
 
+class GCN(torch.nn.Module):
     def __init__(self, args):
-        super(CNN, self).__init__()
+        super().__init__()
+        self.in_channel = (int) (args.dimensions)
+        self.latent_layer = (int) (self.in_channel / 4)
         self.dim = args.nn_dim
-        self.fc1 = torch.nn.Linear(self.dim, self.dim, bias=args.Jump_bias)
-        torch.nn.init.xavier_uniform_(self.fc1.weight)
-        self.layer4 = torch.nn.Sequential(
-            self.fc1,
-            torch.nn.Sigmoid(),
-            torch.nn.Dropout(p=args.Jump_dropout))
+        self.conv1 = GCNConv(self.in_channel, self.latent_layer)
+        self.conv2 = GCNConv(self.latent_layer, self.dim)
 
-    def forward(self, args, x):
-        num_sample = x.shape[0]
-        num_fold = x.shape[1]
-        self.dim = x.shape[1]
-        out = self.layer4(x)
-        out = out.reshape(num_sample, num_fold)
-        return out
-
+    def forward(self, x, edge_index):
+        x = self.conv1(x, edge_index)
+        x = self.conv2(x, edge_index).relu()
+        return x
 
 def initialize_train_para_vec(args, num_class):
-    model = CNN(args)
+    model = GCN(args)
     learning_rate = args.Jump_lr
-    criterion = torch.nn.MSELoss()  
-    optim = torch.optim.Adam(params=model.parameters(), lr=learning_rate)
-
-    return model, criterion, optim
+    optim = torch.optim.SGD(params=model.parameters(), lr=learning_rate, momentum=0.1)
+    return model, optim
 
 def train_para_vec(args, para_vec, model, cost, optimizer):
     optimizer.zero_grad()

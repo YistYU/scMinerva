@@ -6,46 +6,33 @@ import os
 from graphConstruct.build_graph import *
 
 
-def load_graph_data(root_dir, num_omics, node_labels_npy, omics_list, device, trte_idx):
+
+def load_graph_data(root_dir, num_omics, num_of_nodes, omics_list):
 
     node_features = []
     adjacency_list_dict = []
     topology = []
     edge_list = []
 
-    num_of_nodes = len(node_labels_npy)
 
     for i in range(num_omics):
-        f = omics_list[i]    
+        f = omics_list[i]   
+        #m = csr_matrix(f)
         node_features.append(f)
-        edge_list.append(calculateKNNgraphDistanceMatrixStatsWeighted(node_features[i], i, distanceType='euclidean', k=10))
+        edge_list.append(calculateKNNgraphDistanceMatrixStatsWeighted(node_features[i], i, distanceType='euclidean', k=15))
+        print("return edge_list successfully")
+        file_name = os.path.join(root_dir, str(i+1) + '_edge_list.txt')
+        np.savetxt(file_name,edge_list[i])
         adjacency_list_dict.append(edgeList2edgeDict(edge_list[i], num_of_nodes))
         topology.append(build_edge_index(adjacency_list_dict[i], num_of_nodes, add_self_edges=True))
         topology[i] = torch.tensor(topology[i], dtype=torch.int32)
 
-    topology_tr = []
-    edge_list_tr = []
-    node_features_tr = []
-    adjacency_list_dict_tr = []
-    for i in range(num_omics):
-        f = omics_list[i][trte_idx["tr"]]      
-        node_features_tr.append(f)
+    file_name = os.path.join(root_dir, 'topology.pkl')
+    file = open(file_name, 'wb')
+    pickle.dump(topology, file)
+    
+    return topology
 
-        edge_list_tr.append(calculateKNNgraphDistanceMatrixStatsWeighted(node_features_tr[i], i, distanceType='euclidean', k=10))
-        adjacency_list_dict_tr.append(edgeList2edgeDict(edge_list_tr[i], len(trte_idx["tr"])))
-        topology_tr.append(build_edge_index(adjacency_list_dict_tr[i], len(trte_idx["tr"]), add_self_edges=True))
-        topology_tr[i] = torch.tensor(topology_tr[i], dtype=torch.int32)
-    
-    topologyFile = os.path.join(root_dir, "topology_trte" + root_dir + ".pkl")
-    with open(topologyFile, "wb") as f:
-        pickle.dump(topology,f)
-        f.close()
-    
-    topologyFile = os.path.join(root_dir, "topology_tr" + root_dir + ".pkl")
-    with open(topologyFile, "wb") as f:
-        pickle.dump(topology_tr,f)
-        f.close()
-    return topology, topology_tr
 
 def build_edge_index(adjacency_list_dict, num_of_nodes, add_self_edges=True):
     source_nodes_ids, target_nodes_ids = [], []

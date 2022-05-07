@@ -4,7 +4,7 @@ import numpy as np
 from multiprocessing import Pool
 import multiprocessing 
 import time
-
+from sklearn.ensemble import IsolationForest
 
 # kernelDistance
 def kernelDistance(distance,delta=1.0):
@@ -50,9 +50,39 @@ class FindKParallel():
     def work(self):
         return Pool().map(self.vecfindK, range(self.featureMatrix.shape[0]))
 
+def calculateKNNgraphDistanceMatrixML(featureMatrix, distanceType='mahalanobis', k=10, param=None):
+    r"""
+    Thresholdgraph: KNN Graph with Machine Learning based methods
+
+    IsolationForest
+    https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html#sklearn.ensemble.IsolationForest 
+    """      
+    # featureMatrix = featureMatrix.toarray()
+    distMat = distance.cdist(featureMatrix,featureMatrix, distanceType)
+    edgeList=[]
+    # parallel: n_jobs=-1 for using all processors
+    print("Inside to do isolation forest")
+    clf = IsolationForest( contamination= 'auto', n_jobs=-1)
+
+    for w in np.arange(distMat.shape[0]):
+        if w % 100 == 0:
+            print ("w=", w)
+        res = distMat[w,:].argsort()[:k+1]
+        preds = clf.fit_predict(featureMatrix[res,:])       
+        for j in np.arange(1,k+1):
+            # weight = 1.0
+            if preds[j]==-1:
+                weight = 0.0
+            else:
+                weight = 1.0
+            #preds[j]==-1 means outliner, 1 is what we want
+            edgeList.append((w,res[j],weight))
+        if w == distMat.shape[0] - 1:
+            break
+    return edgeList
 
 #para: measuareName:k:threshold
-def calculateKNNgraphDistanceMatrixStatsWeighted(featureMatrix, omics, distanceType='euclidean', k=10, param=None, parallelLimit=0):
+def calculateKNNgraphDistanceMatrixStatsWeighted(featureMatrix, omics, distanceType='mahalanobis', k=20, param=None, parallelLimit=0):
     r"""
     Thresholdgraph: KNN Graph with stats one-std based methods using parallel cores
     """       

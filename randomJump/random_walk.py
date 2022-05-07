@@ -1,7 +1,9 @@
 # Node2Vec to construct the probability
+from unittest.util import sorted_list_difference
 import numpy as np
 import networkx as nx
 import random
+import os
 
 class Graph():
 	def __init__(self, G, is_directed, p, q, f, node_num):
@@ -71,52 +73,26 @@ class Graph():
 		node_num = self.node_num
 		unnormalized_probs = []
 
-		if dst <= node_num and src <= node_num:
-			for dst_nbr in sorted(G.neighbors(dst)):
-				if dst_nbr == src:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight']/p)
-				elif G.has_edge(dst_nbr, src) and dst_nbr <= node_num:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight'])
-				elif (not G.has_edge(dst_nbr, src)) and dst_nbr <= node_num:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight']/q)
-				elif G.has_edge(dst_nbr, src) and dst_nbr > node_num:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight']/f)
-				elif (not G.has_edge(dst_nbr, src)) and dst_nbr > node_num:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight']/( q* f))
-				else:
-					print("Report Error")
-			
-		if dst > node_num and src > node_num:
-			for dst_nbr in sorted(G.neighbors(dst)):
-				if dst_nbr == src:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight']/p)
-				elif G.has_edge(dst_nbr, src) and dst_nbr > node_num:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight'])
-				elif (not G.has_edge(dst_nbr, src)) and dst_nbr > node_num:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight']/q)
-				elif G.has_edge(dst_nbr, src) and dst_nbr <= node_num:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight']/f)
-				elif (not G.has_edge(dst_nbr, src)) and dst_nbr <= node_num:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight']/( q* f))
-				else:
-					print("Report Error")
+		dst_graph = (int)(dst / node_num)
+		src_graph = (int)(src / node_num)
+		#print(dst_graph, src_graph)
 
-		if dst <= node_num and src > node_num:
+		if dst_graph == src_graph:
 			for dst_nbr in sorted(G.neighbors(dst)):
 				if dst_nbr == src:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight']/(p * f))
-				elif G.has_edge(dst_nbr, src) and dst_nbr > node_num:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight']/f)
-				elif (not G.has_edge(dst_nbr, src)) and dst_nbr > node_num:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight']/(q * f))
+					unnormalized_probs.append(G[dst][dst_nbr]['weight']/p)
 				elif G.has_edge(dst_nbr, src) and dst_nbr <= node_num:
 					unnormalized_probs.append(G[dst][dst_nbr]['weight'])
 				elif (not G.has_edge(dst_nbr, src)) and dst_nbr <= node_num:
-					unnormalized_probs.append(G[dst][dst_nbr]['weight']/( q))
+					unnormalized_probs.append(G[dst][dst_nbr]['weight']/q)
+				elif G.has_edge(dst_nbr, src) and dst_nbr > node_num:
+					unnormalized_probs.append(G[dst][dst_nbr]['weight']/f)
+				elif (not G.has_edge(dst_nbr, src)) and dst_nbr > node_num:
+					unnormalized_probs.append(G[dst][dst_nbr]['weight']/( q* f))
 				else:
 					print("Report Error")
 		
-		if dst > node_num and src <= node_num:
+		if dst_graph != src_graph:
 			for dst_nbr in sorted(G.neighbors(dst)):
 				if dst_nbr == src:
 					unnormalized_probs.append(G[dst][dst_nbr]['weight']/(p * f))
@@ -138,19 +114,22 @@ class Graph():
 	
 		return alias_setup(normalized_probs)
 
-	def preprocess_transition_probs(self):
+	def preprocess_transition_probs(self, data_folder):
 		'''
 		Preprocessing of transition probabilities for guiding the random walks.
 		'''
 		G = self.G
 		is_directed = self.is_directed
 		node_num = self.node_num
-
+		edge_list = []
 		alias_nodes = {}
 		for node in G.nodes():	
 			unnormalized_probs = [G[node][nbr]['weight'] for nbr in sorted(G.neighbors(node))]
 			norm_const = sum(unnormalized_probs)
 			normalized_probs = [float(u_prob)/norm_const for u_prob in unnormalized_probs]
+
+			for i in range(0, len(sorted(G.neighbors(node)))):
+				edge_list.append((node, sorted(G.neighbors(node))[i], normalized_probs[i]))
 			# for prob in normalized_probs:
 			# 	prob = prob.detach().numpy()
 			ar = np.zeros(len(normalized_probs))
@@ -158,11 +137,10 @@ class Graph():
 				ar[e] = normalized_probs[e]
 			normalized_probs = np.array(ar)
 			alias_nodes[node] = alias_setup(normalized_probs)
-
 		alias_edges = {}
 		triads = {}
 
-		if is_directed:
+		if not is_directed:
 			for edge in G.edges():
 				alias_edges[edge] = self.get_alias_edge(edge[0], edge[1])
 		else:
@@ -173,7 +151,7 @@ class Graph():
 		self.alias_nodes = alias_nodes
 		self.alias_edges = alias_edges
 
-		return
+		return edge_list
 
 def alias_setup(probs):
 	'''
@@ -190,22 +168,22 @@ def alias_setup(probs):
 	smaller = []
 	larger = []
 	for kk, prob in enumerate(probs):
-	    q[kk] = K*prob
-	    if q[kk] < 1.0:
-	        smaller.append(kk)
-	    else:
-	        larger.append(kk)
+		q[kk] = K*prob
+		if q[kk] < 1.0:
+			smaller.append(kk)
+		else:
+			larger.append(kk)
 
 	while len(smaller) > 0 and len(larger) > 0:
-	    small = smaller.pop()
-	    large = larger.pop()
+		small = smaller.pop()
+		large = larger.pop()
 
-	    J[small] = large
-	    q[large] = q[large] + q[small] - 1.0
-	    if q[large] < 1.0:
-	        smaller.append(large)
-	    else:
-	        larger.append(large)
+		J[small] = large
+		q[large] = q[large] + q[small] - 1.0
+		if q[large] < 1.0:
+			smaller.append(large)
+		else:
+			larger.append(large)
 
 	return J, q
 
@@ -217,9 +195,9 @@ def alias_draw(J, q):
 
 	kk = int(np.floor(np.random.rand()*K))
 	if np.random.rand() < q[kk]:
-	    return kk
+		return kk
 	else:
-	    return J[kk]
+		return J[kk]
 
 def get_node_normalized_prob(Graph, node, weight, node_num):
 	
