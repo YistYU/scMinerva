@@ -1,6 +1,6 @@
-# Minerva
+# scMinerva
 
-Single-cell Multi-omics Integration on Heterogeneous Graph implemented Random Jump via GNN auto-encoder
+An unsupervised Single-Cell Multi-omics INtegration method with GCN on hEterogeneous graph utilizing RandomWAlk
 
 ## Files
 *main.py*: Examples for classification tasks\
