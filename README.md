@@ -1,4 +1,4 @@
-![image](https://github.com/YistYU/scMinerva/blob/main/overview.png)
+![image](https://github.com/YistYU/scMinerva/blob/main/Framework.png)
 
 
 # scMinerva
