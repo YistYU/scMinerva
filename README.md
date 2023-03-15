@@ -6,10 +6,11 @@ Authors: [Tingyang Yu](https://yistyu.github.io/), Yongshuo Zong, Yixuan Wang, X
 
 scMinerva is an unsupervised framework for single-cell multi-omics integrated analysis. The learned embeddings from the multi-omics data enable accurate integrated classification of cell types and stages. The power of scMinerva is sparkled by easy fine-tuning and is not sensitive to the using label size for fine-tuning a separate classifier. Out method could achieve excellent performance even with only 5% labeled data. 
 
+![image](https://github.com/YistYU/scMinerva/blob/main/scMinerva_framework.jpg)
+
 To use scMinerva, do the following: 
 - Install the environment
 - Prepare the data
-- Modify `main.py' file
 - Train and evaluate scMinerva
 
 
@@ -27,6 +28,10 @@ Required Files:
 *name the omics files*: Files for omics features are supposed to be named as "i.csv" where *i* is an integer to distinguish omics. i.e. "2.csv".\
 *name the label files*: Label file is supposed to be named as "labels.csv" under the corresponding dataset directory.\
 
+
+## Train and evaluate scMinerva
+
+Demo command on datase GSE156478_CITE:
 
 ```bash
 python main.py --data_folder 'GSE156478_CITE' --num_omics 2 --num_class 7 --labeled_ratio 0.05
