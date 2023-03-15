@@ -23,6 +23,7 @@ conda env create --file scMinerva.yml
 ## Prepare the data
 
 Required Files: 
+
 *Omics*: .csv file with shape (a,b) where a is the number of sample and b is the number of feature.\
 *label*: labels should be indexed start from *0* and be consecutive natural integers. \
 *name the omics files*: Files for omics features are supposed to be named as "i.csv" where *i* is an integer to distinguish omics. i.e. "2.csv".\
@@ -37,7 +38,7 @@ Demo command on datase GSE156478_CITE:
 python main.py --data_folder 'GSE156478_CITE' --num_omics 2 --num_class 7 --labeled_ratio 0.05
 ```
 
-parameters:
+Parameters:
 
 1. data_folder: the folder that contains prepared omics data and label data. 
 2. num_omics: the amount of omics inputed. 
