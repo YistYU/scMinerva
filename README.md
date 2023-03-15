@@ -6,7 +6,7 @@ Authors: [Tingyang Yu](https://yistyu.github.io/), Yongshuo Zong, Yixuan Wang, X
 
 scMinerva is an unsupervised framework for single-cell multi-omics integrated analysis. The learned embeddings from the multi-omics data enable accurate integrated classification of cell types and stages. The power of scMinerva is sparkled by easy fine-tuning and is not sensitive to the using label size for fine-tuning a separate classifier. Out method could achieve excellent performance even with only 5% labeled data. 
 
-![image](https://github.com/YistYU/scMinerva/blob/main/scMinerva_framework.jpg)
+![image](https://github.com/YistYU/scMinerva/blob/main/scMinerva_github.jpg)
 
 To use scMinerva, do the following: 
 - Install the environment
